@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: command -v shellcheck >/dev/null || brew install shellcheck
+      - name: Syntax check (bash 3.2, the macOS default)
+        run: |
+          for f in engine/wisp.sh scripts/build.sh tests/e2e.sh; do /bin/bash -n "$f"; done
+      - name: ShellCheck
+        run: shellcheck -s bash engine/wisp.sh scripts/build.sh tests/e2e.sh
+
+  test:
+    name: Tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Engine self-test
+        run: /bin/bash engine/wisp.sh --self-test
+      - name: End-to-end tests
+        run: /bin/bash tests/e2e.sh
+
+  build:
+    name: Build app and DMG
+    needs: [lint, test]
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: scripts/build.sh
+      - name: Verify the bundle
+        run: |
+          set -euo pipefail
+          lipo -archs dist/Wisp.app/Contents/MacOS/Wisp | tee /dev/stderr | grep -q arm64
+          lipo -archs dist/Wisp.app/Contents/MacOS/Wisp | grep -q x86_64
+          codesign --verify --deep --strict dist/Wisp.app
+          hdiutil verify dist/Wisp.dmg
+          (cd dist && shasum -a 256 -c Wisp.dmg.sha256)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Wisp-dmg
+          path: |
+            dist/Wisp.dmg
+            dist/Wisp.dmg.sha256
+          retention-days: 14
