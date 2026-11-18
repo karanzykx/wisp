@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Wisp removed or offered something it should not have
+    url: https://github.com/karanzykx/wisp/security/advisories/new
+    about: Report privately. Please do not post these in a public issue.
