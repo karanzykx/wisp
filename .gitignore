@@ -1,0 +1,17 @@
+# Build output
+dist/
+build/
+*.dmg
+*.app
+
+# macOS / editors
+.DS_Store
+.AppleDouble
+.vscode/
+.idea/
+xcuserdata/
+*.xcworkspace/
+
+# Logs and scratch files
+*.log
+.env
