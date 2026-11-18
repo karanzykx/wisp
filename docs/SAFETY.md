@@ -21,7 +21,7 @@ can check it yourself. If anything here is not true of the code, that is a bug: 
 | System caches | `com.apple.*` caches (except Xcode's `com.apple.dt.*`) | Explicit deny |
 | Backups and history | iPhone backups, Xcode Archives, JetBrains Local History, Time Machine | Not allowlisted / explicit deny |
 | Databases and environments | Docker volumes and containers, Python virtualenvs, Poetry environments, Conda/Mamba environments (`envs/`, the base environment) | Not touched / explicit deny |
-| SDK and tool installs | Dart/Flutter activated tools (`~/.pub-cache/bin`, `global_packages`, `git`), Conda/Mamba installs | Only the exact `~/.pub-cache/hosted` and `<conda root>/pkgs` download caches are allowed (`~/.conda`, `~/miniconda3`, `~/anaconda3`, `~/miniforge3`, `~/mambaforge`, `~/micromamba`); no wildcards |
+| SDK and tool installs | Dart/Flutter activated tools (`~/.pub-cache/bin`, `global_packages`, `git`), Conda/Mamba installs and environments, language SDKs | Only the exact folders in the built-in tool cache registry are allowed (for example `~/.pub-cache/hosted` or `<conda root>/pkgs`), never anything inside, above or beside them |
 | Credentials | `~/.ssh`, `~/.composer/auth.json`, `~/.gradle/gradle.properties`, `~/.cargo/registry/index` | Only exact cache sub-folders of each dot-directory are allowed |
 
 ## How a deletion is decided

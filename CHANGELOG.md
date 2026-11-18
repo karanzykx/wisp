@@ -14,9 +14,12 @@ cutting a release.
 ## [Unreleased]
 
 ### Added
-
-- Dart/Flutter pub cache (`~/.pub-cache/hosted`) and Conda/Mamba package cache (`pkgs` of the usual install folders)
-  as a new `devcaches` category, off by default. Environments, SDKs and activated Dart tools are never touched.
+- A registry of developer tool caches (`TOOL_CACHES` in the engine) and two categories built on it: **Developer tool caches**
+  (safe, on by default) and **Language package downloads** (off by default, marked Reinstall because projects need an
+  install or restore step again). It starts with Dart/Flutter and Conda/Mamba packages, thanks to @P1LOTRX, plus NuGet, Hex,
+  Cabal, the Terraform plugin cache, minikube, rustup, pre-commit, Zig, mise, kubectl and the Android SDK manager.
+  Supporting another tool is one line, and the tests check every entry automatically.
+- `wisp --list-targets` prints every folder in the registry.
 
 ## [0.1.0] - 2026-11-18
 

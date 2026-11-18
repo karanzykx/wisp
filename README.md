@@ -115,7 +115,8 @@ moved to the Trash (recoverable with *Put Back*); app data is shown but never of
 | Xcode build data | DerivedData and simulator caches. **Archives are never touched** | on |
 | Unavailable simulators | `xcrun simctl delete unavailable` | on |
 | Package caches | npm, Yarn, Bun, pip, uv, Poetry, Composer and Ivy download caches; `pnpm store prune` | on |
-| Dart and Conda package caches | Dart/Flutter `~/.pub-cache/hosted` and the Conda/Mamba `pkgs` download cache. Environments, SDKs and activated Dart tools are never touched | off |
+| Developer tool caches | Caches of pre-commit, Zig, mise, rustup, kubectl and the Android SDK manager. Each rebuilds itself the next time the tool runs | on |
+| Language package downloads | Downloaded packages for Dart/Flutter, Conda/Mamba, NuGet, Hex, Cabal, Terraform and minikube. Projects need an install or restore step again, such as `pub get` or `dotnet restore` | off |
 | Homebrew | `brew cleanup --prune=all` (installed software stays) | on |
 | Docker | Untagged images and build cache. **Volumes and containers are never touched** | on |
 | Device support symbols | Xcode iOS/watchOS/tvOS symbols, re-created when you connect a device | off |
