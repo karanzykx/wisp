@@ -13,13 +13,7 @@ cutting a release.
 
 ## [Unreleased]
 
-### Added
-- A registry of developer tool caches (`TOOL_CACHES` in the engine) and two categories built on it: **Developer tool caches**
-  (safe, on by default) and **Language package downloads** (off by default, marked Reinstall because projects need an
-  install or restore step again). It starts with Dart/Flutter and Conda/Mamba packages, thanks to @P1LOTRX, plus NuGet, Hex,
-  Cabal, the Terraform plugin cache, minikube, rustup, pre-commit, Zig, mise, kubectl and the Android SDK manager.
-  Supporting another tool is one line, and the tests check every entry automatically.
-- `wisp --list-targets` prints every folder in the registry.
+Nothing yet.
 
 ## [0.1.0] - 2026-11-18
 
@@ -42,6 +36,12 @@ more categories and automation (see the roadmap).
 - `--self-test` command, a ShellCheck-clean engine, and an end-to-end test suite that runs the real engine against
   a throwaway home folder.
 - Direct DMG download (with SHA-256) and a Homebrew tap: `brew install --cask karanzykx/tap/wisp`.
+- A registry of developer tool caches (`TOOL_CACHES` in the engine) and two categories built on it: **Developer tool caches**
+  (safe, on by default) and **Language package downloads** (off by default, marked Reinstall because projects need an
+  install or restore step again). It starts with Dart/Flutter and Conda/Mamba packages, thanks to @P1LOTRX, plus NuGet, Hex,
+  Cabal, the Terraform plugin cache, minikube, rustup, pre-commit, Zig, mise, kubectl and the Android SDK manager.
+  Supporting another tool is one line, and the tests check every entry automatically.
+- `wisp --list-targets` prints every folder in the registry.
 
 ### Known limitations
 - The app is not notarised by Apple, so macOS asks for one extra approval on first launch; see the README.
