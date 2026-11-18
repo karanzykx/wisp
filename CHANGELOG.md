@@ -13,7 +13,10 @@ cutting a release.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- Dart/Flutter pub cache (`~/.pub-cache/hosted`) and Conda/Mamba package cache (`pkgs` of the usual install folders)
+  as a new `devcaches` category, off by default. Environments, SDKs and activated Dart tools are never touched.
 
 ## [0.1.0] - 2026-11-18
 

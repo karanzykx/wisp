@@ -171,7 +171,41 @@ expect "refuses to run as a different HOME of /"       bash -c 'env HOME=/ /bin/
 expect "--version prints x.y.z"                        bash -c '/bin/bash "$1" --version | grep -Eq "^wisp [0-9]+\.[0-9]+\.[0-9]+$"' _ "$ENGINE"
 
 # ─────────────────────────────────────────────────────────────────────────────
-group "10. Built-in self-test passes"
+group "10. Dart pub cache and Conda package cache: only the download caches go"
+fixture
+blob "$T/.pub-cache/hosted/pub.dev/http-1.0.0/lib/http.dart" 64
+blob "$T/.pub-cache/global_packages/tool/pubspec.lock" 8
+blob "$T/.pub-cache/bin/tool" 8
+blob "$T/.pub-cache/git/repo/blob" 8
+blob "$T/.conda/pkgs/numpy-1.0/blob" 64
+blob "$T/.conda/envs/work/bin/python" 64
+echo ".conda/envs" >"$T/.conda/environments.txt"
+blob "$T/miniconda3/pkgs/numpy-1.0/blob" 64
+blob "$T/miniconda3/bin/conda" 8
+blob "$T/miniconda3/envs/work/bin/python" 64
+blob "$T/miniforge3/pkgs/numpy-1.0/blob" 64
+blob "$T/miniforge3/conda-meta/history" 8
+blob "$T/Library/Caches/appA/blob" 64
+wisp --yes --app --no-report --only appcaches >/dev/null
+expect "unselected devcaches: pub cache untouched"     exists ".pub-cache/hosted/pub.dev/http-1.0.0/lib/http.dart"
+expect "unselected devcaches: conda pkgs untouched"    exists "miniconda3/pkgs/numpy-1.0/blob"
+wisp --yes --app --no-report --only devcaches >/dev/null
+expect "pub hosted cache removed"                      gone ".pub-cache/hosted"
+expect "pub global tools kept"                         exists ".pub-cache/global_packages/tool/pubspec.lock"
+expect "pub bin folder kept"                           exists ".pub-cache/bin/tool"
+expect "pub git cache kept"                            exists ".pub-cache/git/repo/blob"
+expect "~/.conda/pkgs removed"                         gone ".conda/pkgs"
+expect "~/.conda envs kept"                            exists ".conda/envs/work/bin/python"
+expect "~/.conda/environments.txt kept"                exists ".conda/environments.txt"
+expect "miniconda3 pkgs removed"                       gone "miniconda3/pkgs"
+expect "miniconda3 base environment kept"              exists "miniconda3/bin/conda"
+expect "miniconda3 environment kept"                   exists "miniconda3/envs/work/bin/python"
+expect "miniforge3 pkgs removed"                       gone "miniforge3/pkgs"
+expect "miniforge3 conda-meta kept"                    exists "miniforge3/conda-meta/history"
+expect "other category (appcaches) untouched"          exists "Library/Caches/appA/blob"
+
+# ─────────────────────────────────────────────────────────────────────────────
+group "11. Built-in self-test passes"
 fixture
 expect "engine --self-test exits 0"                    bash -c 'env HOME="$1" TMPDIR="$1/tmp" /bin/bash "$2" --self-test >/dev/null 2>&1' _ "$T" "$ENGINE"
 

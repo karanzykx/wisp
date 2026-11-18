@@ -34,7 +34,7 @@
 #        --self-test   prove the safety guards work on this Mac, then exit
 #        --only IDS    clean only these categories (comma-separated ids), e.g.
 #                      browsers,appcaches,electron,logs,xcode,devsupport,simulators,
-#                      pkgcaches,pnpm,depstores,brew,brewauto,docker,projdeps,trash
+#                      pkgcaches,pnpm,depstores,devcaches,brew,brewauto,docker,projdeps,trash
 #        --insights    read-only: list large files and big folders worth a look
 #        --dep-days N  "old project" threshold for node_modules/vendor/target (default 90)
 #        --app         machine-readable progress lines (used by Wisp.app)
@@ -144,6 +144,13 @@ ALLOWED_ROOTS=(
   "$HOME/.gradle"
   "$HOME/.ivy2"
   "$HOME/.cargo/registry"
+  "$HOME/.pub-cache"
+  "$HOME/.conda"
+  "$HOME/miniconda3"
+  "$HOME/anaconda3"
+  "$HOME/miniforge3"
+  "$HOME/mambaforge"
+  "$HOME/micromamba"
 )
 
 # User's never-touch list.
@@ -238,6 +245,10 @@ guard_path() {
     "$HOME/.cache/"*)    case "$p" in "$HOME/.cache/pip"|"$HOME/.cache/uv"|"$HOME/.cache/yarn"|"$HOME/.cache/pypoetry/cache"|"$HOME/.cache/pypoetry/artifacts") ;; *) return 1 ;; esac ;;
     "$HOME/.bun/install/"*)  [[ "$p" == "$HOME/.bun/install/cache" ]] || return 1 ;;
     "$HOME/.yarn/berry/"*)   [[ "$p" == "$HOME/.yarn/berry/cache" ]] || return 1 ;;
+    "$HOME/.pub-cache/"*)    [[ "$p" == "$HOME/.pub-cache/hosted" ]] || return 1 ;;
+    "$HOME/.conda/"*|"$HOME/miniconda3/"*|"$HOME/anaconda3/"*|"$HOME/miniforge3/"*|"$HOME/mambaforge/"*|"$HOME/micromamba/"*)
+      # Conda/Mamba: only the downloaded-package cache. Never envs/, the base environment or anything else.
+      case "$p" in "$HOME/.conda/pkgs"|"$HOME/miniconda3/pkgs"|"$HOME/anaconda3/pkgs"|"$HOME/miniforge3/pkgs"|"$HOME/mambaforge/pkgs"|"$HOME/micromamba/pkgs") ;; *) return 1 ;; esac ;;
     "$HOME/.cargo/registry/"*) case "$p" in "$HOME/.cargo/registry/cache"|"$HOME/.cargo/registry/src") ;; *) return 1 ;; esac ;;
   esac
   return 0
@@ -438,7 +449,7 @@ self_test() {
 
   section "Self-test 2/7: guard allows real cache locations"
   for p in "$HOME/Library/Caches/Yarn" "$HOME/Library/Application Support/Code/Cache" \
-           "$HOME/.gradle/caches" "$HOME/.npm/_cacache" "$HOME/.cache/pip" \
+           "$HOME/.gradle/caches" "$HOME/.npm/_cacache" "$HOME/.cache/pip"            "$HOME/.pub-cache/hosted" "$HOME/.conda/pkgs" "$HOME/miniconda3/pkgs" "$HOME/anaconda3/pkgs"            "$HOME/miniforge3/pkgs" "$HOME/mambaforge/pkgs" "$HOME/micromamba/pkgs" \
            "$HOME/Library/Developer/Xcode/DerivedData/App-abc"; do
     check guard_path "$p"
   done
@@ -764,6 +775,19 @@ fi
 add "$HOME/.cargo/registry/cache"
 add "$HOME/.cargo/registry/src"
 offer "Delete these dependency stores?" n
+
+# ── 7b · Dart/Flutter and Conda download caches (re-downloaded → default No) ─
+step "Dart/Flutter and Conda package caches"
+note "Downloaded packages only. Conda environments, SDKs, activated Dart tools and your projects are untouched."
+cat_begin devcaches "Dart & Conda package caches" redownload shippingbox   "Dart/Flutter pub cache and Conda/Mamba package cache. Re-downloaded by 'pub get' / 'conda install'; environments are untouched."
+add "$HOME/.pub-cache/hosted"
+add "$HOME/.conda/pkgs"
+add "$HOME/miniconda3/pkgs"
+add "$HOME/anaconda3/pkgs"
+add "$HOME/miniforge3/pkgs"
+add "$HOME/mambaforge/pkgs"
+add "$HOME/micromamba/pkgs"
+offer "Clear the Dart and Conda package caches? (re-downloaded when needed)" n
 
 # ── 8 · Homebrew ─────────────────────────────────────────────────────────────
 step "Homebrew"

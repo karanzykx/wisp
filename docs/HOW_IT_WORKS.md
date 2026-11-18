@@ -46,6 +46,7 @@ Each category has a stable id used by `--only`.
 | `pkgcaches` | npm, Yarn, Bun, pip, uv, Poetry, Composer, Ivy caches | on |
 | `pnpm` | `pnpm store prune` | on |
 | `depstores` | Gradle caches and wrapper dists, Cargo registry | off |
+| `devcaches` | Dart/Flutter `~/.pub-cache/hosted`, Conda/Mamba `pkgs` download cache | off |
 | `brew` | `brew cleanup --prune=all` | on |
 | `brewauto` | `brew autoremove`, with the list shown first | off |
 | `docker` | Dangling images and build cache (never volumes) | on |
