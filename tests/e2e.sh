@@ -30,7 +30,7 @@ count_files() { find "$T" -type f -not -path "$T/Library/Logs/Wisp/*" -not -path
 cats() { grep -E '^@@CAT' | cut -f2 | sort | tr '\n' ' '; }
 
 fixture() {
-  rm -rf "${T:?}"/* "$T"/.config "$T"/.ssh
+  rm -rf "${T:?}"/* "$T"/.config "$T"/.ssh "$T"/.pub-cache "$T"/.conda
   mkdir -p "$T/tmp"
   # caches
   blob "$T/Library/Caches/appA/blob" 2048
@@ -171,7 +171,53 @@ expect "refuses to run as a different HOME of /"       bash -c 'env HOME=/ /bin/
 expect "--version prints x.y.z"                        bash -c '/bin/bash "$1" --version | grep -Eq "^wisp [0-9]+\.[0-9]+\.[0-9]+$"' _ "$ENGINE"
 
 # ─────────────────────────────────────────────────────────────────────────────
-group "10. Built-in self-test passes"
+group "10. Tool cache registry: every listed folder goes, everything beside it stays"
+fixture
+targets="$(wisp --list-targets)"
+n=0
+while IFS=$'\t' read -r _ path; do
+  [[ -n "$path" ]] || continue
+  n=$((n + 1))
+  blob "$path/blob" 1024
+  echo keep >"$(dirname "$path")/keep-me"
+done <<<"$targets"
+expect "the registry lists at least 10 folders"        test "$n" -ge 10
+# things that live next to the listed folders and must never go
+blob "$T/.pub-cache/global_packages/tool/pubspec.lock" 8
+blob "$T/.pub-cache/bin/tool" 8
+blob "$T/.pub-cache/git/repo/blob" 8
+blob "$T/.conda/envs/work/bin/python" 64
+echo ".conda/envs" >"$T/.conda/environments.txt"
+blob "$T/miniconda3/bin/conda" 8
+blob "$T/miniconda3/envs/work/bin/python" 64
+blob "$T/miniforge3/conda-meta/history" 8
+blob "$T/Library/Caches/appA/blob" 64
+
+wisp --yes --app --no-report --only appcaches >/dev/null
+first="$(printf '%s\n' "$targets" | head -n 1 | cut -f2)"
+expect "unselected categories leave registry folders alone"  test -e "$first/blob"
+
+wisp --yes --app --no-report --only toolcaches,toolpackages >/dev/null
+not_gone=""; lost=""
+while IFS=$'\t' read -r _ path; do
+  [[ -n "$path" ]] || continue
+  [[ -e "$path" ]] && not_gone="$not_gone $path"
+  [[ -e "$(dirname "$path")/keep-me" ]] || lost="$lost $path"
+done <<<"$targets"
+expect "every registry folder was removed"             test -z "$not_gone"
+expect "every neighbouring file survived"              test -z "$lost"
+expect "pub global tools kept"                         exists ".pub-cache/global_packages/tool/pubspec.lock"
+expect "pub bin folder kept"                           exists ".pub-cache/bin/tool"
+expect "pub git cache kept"                            exists ".pub-cache/git/repo/blob"
+expect "conda environments kept"                       exists ".conda/envs/work/bin/python"
+expect "conda environments.txt kept"                   exists ".conda/environments.txt"
+expect "miniconda3 base environment kept"              exists "miniconda3/bin/conda"
+expect "miniconda3 environment kept"                   exists "miniconda3/envs/work/bin/python"
+expect "miniforge3 conda-meta kept"                    exists "miniforge3/conda-meta/history"
+expect "other category (appcaches) untouched"          exists "Library/Caches/appA/blob"
+
+# ─────────────────────────────────────────────────────────────────────────────
+group "11. Built-in self-test passes"
 fixture
 expect "engine --self-test exits 0"                    bash -c 'env HOME="$1" TMPDIR="$1/tmp" /bin/bash "$2" --self-test >/dev/null 2>&1' _ "$T" "$ENGINE"
 

@@ -34,8 +34,9 @@
 #        --self-test   prove the safety guards work on this Mac, then exit
 #        --only IDS    clean only these categories (comma-separated ids), e.g.
 #                      browsers,appcaches,electron,logs,xcode,devsupport,simulators,
-#                      pkgcaches,pnpm,depstores,brew,brewauto,docker,projdeps,trash
+#                      pkgcaches,pnpm,depstores,toolcaches,toolpackages,brew,brewauto,docker,projdeps,trash
 #        --insights    read-only: list large files and big folders worth a look
+#        --list-targets print every folder in the developer tool cache registry
 #        --dep-days N  "old project" threshold for node_modules/vendor/target (default 90)
 #        --app         machine-readable progress lines (used by Wisp.app)
 #        --version     print version
@@ -58,7 +59,7 @@ set -uo pipefail
 # ── Options ──────────────────────────────────────────────────────────────────
 VERSION="0.1.0"
 DRY_RUN=false; ASSUME_YES=false; SYSTEM=false; MAINT=false; LOG_DAYS=7
-APP_MODE=false; NO_REPORT=false; SELF_TEST=false; ONLY=""; INSIGHTS=false; DEP_DAYS=90
+APP_MODE=false; NO_REPORT=false; SELF_TEST=false; ONLY=""; INSIGHTS=false; LIST_TARGETS=false; DEP_DAYS=90
 
 while (( $# )); do
   case "$1" in
@@ -72,6 +73,7 @@ while (( $# )); do
     --app)          APP_MODE=true ;;
     --only)         shift; ONLY="${1:-}" ;;
     --insights)     INSIGHTS=true ;;
+    --list-targets) LIST_TARGETS=true ;;
     --dep-days)     shift; DEP_DAYS="${1:-}" ;;
     --version)      echo "wisp $VERSION"; exit 0 ;;
     -h|--help)      awk '/^# =+$/{n++; next} n==1{sub(/^# ?/,""); print} n>=2{exit}' "$0"; exit 0 ;;
@@ -158,6 +160,58 @@ if [[ -f "$KEEP_FILE" ]]; then
   done <"$KEEP_FILE"
 fi
 
+# Registry of developer tool caches: the folders Wisp may clear for tools that keep their downloads
+# outside ~/Library/Caches. One line each: <category>|<folder relative to your home>
+#   toolcaches    pure caches: the tool rebuilds the folder by itself the next time it runs
+#   toolpackages  downloaded packages: projects need an install or restore step again
+# Only exact folders belong here, at least two levels deep. The guard allows these paths and nothing
+# inside, above or beside them. The self-test and tests/e2e.sh check every line automatically.
+TOOL_CACHES='
+toolcaches|.cache/pre-commit
+toolcaches|.cache/zig
+toolcaches|.cache/mise
+toolcaches|.android/cache
+toolcaches|.rustup/downloads
+toolcaches|.kube/cache
+toolpackages|.pub-cache/hosted
+toolpackages|.conda/pkgs
+toolpackages|miniconda3/pkgs
+toolpackages|anaconda3/pkgs
+toolpackages|miniforge3/pkgs
+toolpackages|mambaforge/pkgs
+toolpackages|micromamba/pkgs
+toolpackages|.nuget/packages
+toolpackages|.hex/packages
+toolpackages|.cabal/packages
+toolpackages|.cache/cabal/packages
+toolpackages|.terraform.d/plugin-cache
+toolpackages|.minikube/cache
+'
+
+registry_entry_ok() {   # a relative path is only trusted if it is deep enough and not a personal folder
+  local rel="$1" first="${1%%/*}"
+  [[ "$rel" == */* && "$rel" != /* && "$rel" != */ && "$rel" != *..* ]] || return 1
+  case "$first" in
+    Documents|Desktop|Downloads|Pictures|Movies|Music|Library|Public|Applications|Projects|.ssh|.gnupg|.config|.local|.Trash) return 1 ;;
+  esac
+  return 0
+}
+
+tool_targets() {   # tool_targets [category]: absolute paths, one per line
+  local cat rel
+  while IFS='|' read -r cat rel; do
+    [[ -n "$cat" && "$cat" != \#* ]] || continue
+    registry_entry_ok "$rel" || continue
+    if [[ -z "${1:-}" || "$cat" == "$1" ]]; then printf '%s\n' "$HOME/$rel"; fi
+  done <<<"$TOOL_CACHES"
+}
+
+registry_has() {   # no pipe: grep -q could end early and trip pipefail with a SIGPIPE
+  local all; all="$(tool_targets)"
+  case $'\n'"$all"$'\n' in *$'\n'"$1"$'\n'*) return 0 ;; esac
+  return 1
+}
+
 # Exact shape of a rebuildable project dependency folder: it must sit next to
 # its manifest AND lockfile (so one install command restores it), inside your
 # home folder but outside Library and dot-folders, and must not be a symlink.
@@ -197,6 +251,7 @@ guard_path() {
     fi
   done
   dep_ok "$p" && return 0
+  registry_has "$p" && return 0
   for r in "${ALLOWED_ROOTS[@]}"; do
     [[ "$p" == "$r"/?* ]] && { inside=true; break; }
   done
@@ -399,7 +454,7 @@ self_test() {
   # shellcheck disable=SC2329
   gone() { [[ ! -e "$1" ]]; }
 
-  section "Self-test 1/7: guard refuses everything important"
+  section "Self-test 1/8: guard refuses everything important"
   for p in "" "/" "/etc" "$HOME" "$HOME/Documents" "$HOME/Documents/x" "$HOME/Desktop/x" \
            "$HOME/Library" "$HOME/Library/Caches" "$HOME/Library/Caches/../Documents" \
            "$HOME/Library/Caches/a/../../Mail" "$HOME/Library/Application Support/Code/User" \
@@ -410,6 +465,11 @@ self_test() {
            "$HOME/.ssh/id_rsa" "$HOME/.composer/auth.json" "$HOME/.cargo/registry/index" \
            "$HOME/Library/Application Support/MobileSync/Backup" "relative/path" \
            "$HOME/Library/Developer/Xcode/Archives/x" \
+           "$HOME/.pub-cache" "$HOME/.pub-cache/bin/tool" "$HOME/.pub-cache/global_packages/tool" \
+           "$HOME/.pub-cache/git/repo" "$HOME/.pub-cache/hosted/pub.dev/http-1.0.0" \
+           "$HOME/.conda/envs/work" "$HOME/.conda/environments.txt" "$HOME/.conda/pkgs/numpy-1.0" \
+           "$HOME/miniconda3" "$HOME/miniconda3/bin/conda" "$HOME/miniconda3/envs/work" \
+           "$HOME/miniforge3/conda-meta/history" "$HOME/anaconda3/envs/work" "$HOME/micromamba/envs/work" \
            "$HOME/Library/Application Support/Google/Chrome/Default" \
            "$HOME/Library/Application Support/Google/Chrome/Default/Cookies" \
            "$HOME/Library/Application Support/Google/Chrome/Default/Login Data" \
@@ -436,9 +496,11 @@ self_test() {
   done
   ok "$n_ref dangerous paths refused (documents, keychains/passkeys, browser logins, cookies, backups…)"
 
-  section "Self-test 2/7: guard allows real cache locations"
+  section "Self-test 2/8: guard allows real cache locations"
   for p in "$HOME/Library/Caches/Yarn" "$HOME/Library/Application Support/Code/Cache" \
            "$HOME/.gradle/caches" "$HOME/.npm/_cacache" "$HOME/.cache/pip" \
+           "$HOME/.pub-cache/hosted" "$HOME/.conda/pkgs" "$HOME/miniconda3/pkgs" "$HOME/anaconda3/pkgs" \
+           "$HOME/miniforge3/pkgs" "$HOME/mambaforge/pkgs" "$HOME/micromamba/pkgs" \
            "$HOME/Library/Developer/Xcode/DerivedData/App-abc"; do
     check guard_path "$p"
   done
@@ -449,7 +511,7 @@ self_test() {
   KEEP=()
   ok "cache paths allowed; keep-list entries refused"
 
-  section "Self-test 3/7: dry-run deletes nothing, real run deletes"
+  section "Self-test 3/8: dry-run deletes nothing, real run deletes"
   sb="$HOME/Library/Caches/wisp_selftest.$$"
   mkdir -p "$sb/sub" && dd if=/dev/zero of="$sb/sub/blob" bs=1024 count=2048 2>/dev/null
   DRY_RUN=true;  nuke "$sb" 2048; check test -f "$sb/sub/blob"
@@ -461,7 +523,7 @@ self_test() {
   DRY_RUN=false; nuke "$sb" 2048; check gone "$sb"
   ok "dry-run kept the folder, in-use detection worked, real run removed it"
 
-  section "Self-test 4/7: symlinks are never followed"
+  section "Self-test 4/8: symlinks are never followed"
   victim="$HOME/Library/Caches/wisp_selftest_victim.$$"; link="$HOME/Library/Caches/wisp_selftest_link.$$"
   mkdir -p "$victim" && : >"$victim/precious" && ln -s "$victim" "$link"
   reset_list; add "$link"; check test "${#S_PATHS[@]}" -eq 0
@@ -470,7 +532,7 @@ self_test() {
   rm -f "$link"; rm -rf "$victim"
   ok "symlink refused, target untouched"
 
-  section "Self-test 5/7: log pruning removes only old files"
+  section "Self-test 5/8: log pruning removes only old files"
   logs="$HOME/Library/Logs/Wisp_selftest.$$"
   mkdir -p "$logs" && : >"$logs/new.log" && : >"$logs/old.log" && touch -t 202001010000 "$logs/old.log"
   DRY_RUN=true;  prune_old "$logs" 7 0; check test -f "$logs/old.log"
@@ -479,7 +541,7 @@ self_test() {
   rm -rf "$logs"
   ok "old log removed, recent log kept"
 
-  section "Self-test 6/7: project dependencies need manifest + lockfile + idle project"
+  section "Self-test 6/8: project dependencies need manifest + lockfile + idle project"
   local proj="$HOME/wisp_selftest_proj.$$"
   mkdir -p "$proj/node_modules/pkg" "$proj/vendor" "$proj/target"
   check refuses "$proj/node_modules"                    # no package.json
@@ -500,17 +562,43 @@ self_test() {
   rm -rf "$proj"
   ok "dependency folders deleted only when rebuildable and idle; project files untouched"
 
-  section "Self-test 7/7: category selection (--only)"
+  section "Self-test 7/8: category selection (--only)"
   ONLY="browsers,logs"; CAT_ID=browsers; check want browsers; CAT_ID=appcaches; check test "$(want appcaches && echo y || echo n)" = n
   check test "$(confirm x y && echo y || echo n)" = n
   CAT_ID=logs; check test "$(confirm x n && echo y || echo n)" = y
   ONLY=""
   ok "only the named categories are allowed to run"
 
+  section "Self-test 8/8: every tool cache registry entry is exact and isolated"
+  local c t first rel n_reg=0
+  for c in toolcaches toolpackages; do
+    while IFS= read -r t; do
+      n_reg=$(( n_reg + 1 ))
+      rel="${t#"$HOME"/}"; first="${rel%%/*}"
+      check guard_path "$t"                    # the listed folder is allowed
+      check refuses "$t/child"                 # nothing inside it is allowed on its own
+      check refuses "${t%/*}"                  # its parent is never allowed
+      check refuses "${t%/*}/keep-me"          # neither is anything beside it
+      check refuses "$HOME/$first"             # nor its top-level folder
+    done < <(tool_targets "$c")
+  done
+  check test "$n_reg" -ge 10
+  check test "$(printf '%s\n' "$TOOL_CACHES" | awk -F'|' 'NF==2 && $2 !~ /\// {print}' | wc -l | tr -d ' ')" = 0   # no one-level entries
+  check test "$(registry_entry_ok "Documents/x" && echo y || echo n)" = n
+  check test "$(registry_entry_ok ".ssh/keys" && echo y || echo n)" = n
+  check test "$(registry_entry_ok "a/../b" && echo y || echo n)" = n
+  ok "$n_reg registry folders are exact, and their parents, siblings and children stay protected"
+
   log ""
   if (( fails == 0 )); then log "${GREEN}${BOLD}All self-tests passed.${RESET}"; exit 0; fi
   log "${RED}${BOLD}$fails self-test check(s) FAILED. Do not use this script until fixed.${RESET}"; exit 1
 }
+if $LIST_TARGETS; then
+  for c in toolcaches toolpackages; do
+    while IFS= read -r p; do printf '%s\t%s\n' "$c" "$p"; done < <(tool_targets "$c")
+  done
+  exit 0
+fi
 $SELF_TEST && self_test
 
 # =============================================================================
@@ -565,7 +653,7 @@ acquire_lock
 # =============================================================================
 #  START
 # =============================================================================
-STEP=0; TOTAL_STEPS=12; $APP_MODE && TOTAL_STEPS=11
+STEP=0; TOTAL_STEPS=13; $APP_MODE && TOTAL_STEPS=12
 step() { STEP=$(( STEP + 1 )); section "$STEP. $*"; emit STEP "$STEP" "$TOTAL_STEPS"; }
 
 log ""
@@ -764,6 +852,19 @@ fi
 add "$HOME/.cargo/registry/cache"
 add "$HOME/.cargo/registry/src"
 offer "Delete these dependency stores?" n
+
+# ── 7b · Developer tool caches and package downloads (from the registry) ────
+step "Developer tool caches and package downloads"
+cat_begin toolcaches "Developer tool caches" safe shippingbox \
+  "Caches of tools such as pre-commit, Zig, mise, rustup, kubectl and the Android SDK manager. Each rebuilds itself the next time the tool runs."
+while IFS= read -r p; do add "$p"; done < <(tool_targets toolcaches)
+offer "Clear these tool caches?" y
+
+note "Downloaded packages only. Environments, SDKs, installed tools and your projects are untouched."
+cat_begin toolpackages "Language package downloads" reinstall externaldrive \
+  "Downloaded packages for Dart/Flutter, Conda/Mamba, NuGet, Hex, Cabal, Terraform and minikube. Projects need an install or restore step again, such as 'pub get' or 'dotnet restore', before they build."
+while IFS= read -r p; do add "$p"; done < <(tool_targets toolpackages)
+offer "Delete these package downloads? (projects need an install step again)" n
 
 # ── 8 · Homebrew ─────────────────────────────────────────────────────────────
 step "Homebrew"

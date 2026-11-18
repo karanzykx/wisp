@@ -60,6 +60,17 @@ CI runs the same four steps on every pull request.
    confirmation.
 5. **Stay bash 3.2 compatible.** macOS still ships bash 3.2: no associative arrays, no `mapfile`, no `${var,,}`.
 
+## Adding a tool
+
+Most new tools are a single line in `TOOL_CACHES` in `engine/wisp.sh`: `<category>|<folder relative to home>`.
+
+- Use `toolcaches` when the tool rebuilds the folder by itself the next time it runs, and `toolpackages` when a project
+  needs an install or restore step again.
+- The folder must be an exact download or cache folder, at least two levels deep, never a tool's settings, environments or
+  installed SDKs.
+- You do not need to write test code. `--self-test` and `tests/e2e.sh` check every entry. In the pull request, say how the
+  data is rebuilt and link the tool's documentation for that folder.
+
 ## Adding a category
 
 1. In `engine/wisp.sh`, add a section: call `step "Name"`, `cat_begin <id> "<title>" <risk> <sf-symbol> "<description>"`,

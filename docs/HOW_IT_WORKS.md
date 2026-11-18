@@ -46,6 +46,8 @@ Each category has a stable id used by `--only`.
 | `pkgcaches` | npm, Yarn, Bun, pip, uv, Poetry, Composer, Ivy caches | on |
 | `pnpm` | `pnpm store prune` | on |
 | `depstores` | Gradle caches and wrapper dists, Cargo registry | off |
+| `toolcaches` | Pure caches of developer tools, from the tool cache registry | on |
+| `toolpackages` | Downloaded packages (Dart/Flutter, Conda/Mamba, NuGet, Hex, Cabal, Terraform, minikube), from the registry | off |
 | `brew` | `brew cleanup --prune=all` | on |
 | `brewauto` | `brew autoremove`, with the list shown first | off |
 | `docker` | Dangling images and build cache (never volumes) | on |
@@ -72,6 +74,18 @@ tab-separated. The app ignores every other line.
 | `DONE` | | `--insights` finished |
 
 Try it: `engine/wisp.sh --dry-run --yes --app --no-report | grep '^@@'`.
+
+## The tool cache registry
+
+Tools that keep their downloads outside `~/Library/Caches` (Dart's pub cache, Conda packages, NuGet and so on) are listed
+in one table, `TOOL_CACHES` in `engine/wisp.sh`, one line per folder:
+
+```
+toolpackages|.pub-cache/hosted
+```
+
+The guard allows exactly those folders and nothing inside, above or beside them. The scanner, the self-test and
+`tests/e2e.sh` all read the same table, so a new line is checked automatically. `wisp --list-targets` prints it.
 
 ## How "in use" is detected
 
