@@ -16,7 +16,12 @@ Your files, browser logins, passkeys and passwords are never touched.
 ![Apple Silicon and Intel](https://img.shields.io/badge/Apple%20Silicon%20%2B%20Intel-universal-success)
 
 [**Download Wisp.dmg**](https://github.com/karanzykx/wisp/releases/latest/download/Wisp.dmg) ·
-[Homebrew](#install) · [How it stays safe](docs/SAFETY.md) · [How it works](docs/HOW_IT_WORKS.md)
+[Homebrew](#install) · [How it stays safe](docs/SAFETY.md) · [How it works](docs/HOW_IT_WORKS.md) ·
+[Changelog](CHANGELOG.md) · [Roadmap](#roadmap)
+
+> **Status: preview release (v0.1.0).** Wisp is tested and usable, but it is early: behaviour can still change between
+> 0.x versions, and the app is not yet notarised by Apple. New versions are small and numbered; what is planned next is
+> in the [Roadmap](#roadmap). Ideas and bug reports are very welcome.
 
 <br>
 
@@ -191,14 +196,32 @@ Wisp ships through its own tap for now.
 
 ## Roadmap
 
-- Notarised builds once an Apple Developer ID is available, then submission to official Homebrew.
-- Scheduled, unattended cleans with a notification.
-- More categories (JetBrains caches, Android SDK, Flutter, Conda).
+Wisp ships in small, clearly numbered versions, each listed in the [changelog](CHANGELOG.md). Versions below 1.0.0 are
+previews: usable and tested, but still evolving. The plan is public, tracked in
+[milestones](https://github.com/karanzykx/wisp/milestones), and open to suggestions; plans can change.
 
-## Contributing
+| Version | Focus |
+|---|---|
+| **0.1.0** (current) | First public preview: app, engine, safety checks, DMG download, Homebrew tap |
+| **0.2.0** | More categories (JetBrains IDE caches without Local History, Android SDK and emulator caches, Flutter/Dart pub cache, Conda packages) and test reports from Intel Macs and macOS 11–14 |
+| **0.3.0** | Scheduled, unattended cleans with a notification, and a clearer per-run report |
+| **1.0.0** | Notarised app (needs an Apple Developer ID), stable safety rules, submission to official Homebrew |
 
-Bug reports and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first; anything that changes
-what can be deleted must come with a test. Security issues: see [SECURITY.md](SECURITY.md).
+Have an idea? [Start a discussion](https://github.com/karanzykx/wisp/discussions) or open a
+[feature request](https://github.com/karanzykx/wisp/issues/new?template=feature_request.yml).
+
+## Contributing and suggestions
+
+Suggestions, bug reports and pull requests are welcome from everyone.
+
+- **Suggest something:** [Discussions](https://github.com/karanzykx/wisp/discussions), or a feature request.
+- **Report a bug:** use the [issue form](https://github.com/karanzykx/wisp/issues/new/choose).
+- **Send code:** fork, branch, open a pull request. CI (lint, end-to-end tests, build) runs on every pull request.
+
+**All changes are reviewed and merged by the maintainer only.** `main` is protected, requires passing checks, and nobody else
+has write access. That is deliberate: Wisp deletes files, so every change to what can be removed gets a careful review.
+Details, including how to add a category safely, are in [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see
+[SECURITY.md](SECURITY.md).
 
 ## License
 

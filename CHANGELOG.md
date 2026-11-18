@@ -4,9 +4,21 @@ All notable changes to Wisp are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [1.0.0] - 2026-11-18
+**Versioning:** versions below 1.0.0 are *preview* releases. They are tested and usable, but behaviour can still change between
+minor versions (0.1 → 0.2 → 0.3). **1.0.0** will mean a notarised app and a stable set of safety rules. What is planned next is
+tracked in the [milestones](https://github.com/karanzykx/wisp/milestones) and the roadmap in the README.
 
-First public release.
+Every pull request that changes behaviour adds a line under **Unreleased**; the maintainer moves them under a version heading when
+cutting a release.
+
+## [Unreleased]
+
+Nothing yet.
+
+## [0.1.0] - 2026-11-18
+
+**First public preview.** The cleaner, the app and the safety checks are complete enough to use daily; the next versions add
+more categories and automation (see the roadmap).
 
 ### Added
 - **Wisp.app**: a native window (SwiftUI, universal binary for Apple Silicon and Intel, macOS 11+) that scans first,
@@ -31,4 +43,5 @@ First public release.
 - Automated tests run on macOS 15 (Apple Silicon). Intel Macs and macOS 11–14 are supported by the build but not
   covered by CI.
 
-[1.0.0]: https://github.com/karanzykx/wisp/releases/tag/v1.0.0
+[Unreleased]: https://github.com/karanzykx/wisp/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/karanzykx/wisp/releases/tag/v0.1.0

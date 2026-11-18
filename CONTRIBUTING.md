@@ -3,6 +3,29 @@
 Thanks for helping. Wisp deletes files, so the bar for changes that affect *what can be deleted* is deliberately high.
 Everything else is welcome and easy.
 
+## How contributions work
+
+Everyone is welcome to suggest and contribute. The ground rules:
+
+- **Suggestions** go in [Discussions](https://github.com/karanzykx/wisp/discussions) or a feature-request issue. Nothing is too small.
+- **Code** comes in as a pull request from your fork. **Only the maintainer ([@karanzykx](https://github.com/karanzykx)) merges.**
+  `main` is protected: changes need passing CI and the maintainer's review, and nobody else has write access.
+- **Review is stricter for anything that changes what can be deleted.** Expect questions about how the data is rebuilt, and a
+  request for tests (see below). A pull request can be declined or reworked; that is about keeping users' files safe,
+  not about the contributor.
+- **First-time contributors:** GitHub asks the maintainer to approve the first CI run on your pull request.
+- **Credit:** contributors are thanked in the changelog entry for their change.
+- **Licence:** by contributing you agree that your contribution is released under the project's [MIT licence](LICENSE).
+- **Conduct:** see the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+### Versions and the changelog
+
+Wisp follows [Semantic Versioning](https://semver.org/). Versions below 1.0.0 are previews; **1.0.0** means a notarised app and
+stable safety rules. Planned versions are listed in the README roadmap and as GitHub milestones.
+
+Every pull request with a user-visible change adds one line under **Unreleased** in [`CHANGELOG.md`](CHANGELOG.md)
+(Added / Changed / Fixed / Security). The maintainer moves those lines under a version heading when cutting a release.
+
 ## Setup
 
 You need a Mac with the Xcode Command Line Tools (`xcode-select --install`) and, for linting,
@@ -54,7 +77,9 @@ CI runs the same four steps on every pull request.
 
 ## Releasing (maintainers)
 
-1. Bump `VERSION` in `engine/wisp.sh` and add a `## [x.y.z] - date` section to `CHANGELOG.md`.
+1. Bump `VERSION` in `engine/wisp.sh`, move the **Unreleased** entries in `CHANGELOG.md` under a new `## [x.y.z] - date`
+   heading, and update the compare links at the bottom of the changelog. Releases below 1.0.0 are labelled *preview*
+   automatically.
 2. Commit, then tag and push: `git tag vX.Y.Z && git push origin main vX.Y.Z`.
 3. The **Release** workflow checks the tag matches the engine version, runs the tests, builds the DMG, and publishes it
    with its SHA-256 to GitHub Releases.

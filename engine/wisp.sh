@@ -56,7 +56,7 @@
 set -uo pipefail
 
 # ── Options ──────────────────────────────────────────────────────────────────
-VERSION="1.0.0"
+VERSION="0.1.0"
 DRY_RUN=false; ASSUME_YES=false; SYSTEM=false; MAINT=false; LOG_DAYS=7
 APP_MODE=false; NO_REPORT=false; SELF_TEST=false; ONLY=""; INSIGHTS=false; DEP_DAYS=90
 

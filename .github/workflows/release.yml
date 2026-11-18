@@ -1,6 +1,6 @@
 name: Release
 
-# Push a tag like v1.0.0 and this builds the DMG from that exact commit and
+# Push a tag like v0.1.0 and this builds the DMG from that exact commit and
 # publishes it, with its SHA-256, as a GitHub Release.
 on:
   push:
@@ -51,14 +51,24 @@ jobs:
             echo "**Install:** download \`Wisp.dmg\` below, or \`brew install --cask karanzykx/tap/wisp\`."
             echo "SHA-256 is in \`Wisp.dmg.sha256\`."
           } >>notes.md
+          case "$VERSION" in
+            0.*)
+              {
+                echo
+                echo "> **Preview release.** Wisp 0.x is usable and tested, but its behaviour can still change between"
+                echo "> minor versions. Ideas and feedback are welcome in [Discussions](https://github.com/karanzykx/wisp/discussions)."
+              } >>notes.md ;;
+          esac
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          title="Wisp $VERSION"
+          case "$VERSION" in 0.*) title="$title (preview)" ;; esac
           gh release create "$GITHUB_REF_NAME" \
             dist/Wisp.dmg dist/Wisp.dmg.sha256 \
-            --title "Wisp $VERSION" \
+            --title "$title" \
             --notes-file notes.md \
             --verify-tag
 

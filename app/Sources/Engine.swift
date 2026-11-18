@@ -439,7 +439,7 @@ final class Engine: ObservableObject {
         ]
         keepEntries = ["~/Library/Caches/com.spotify.client", "Obsidian"]
         rootEntries = ["~/Work/clients"]
-        scriptVersion = "1.0.0"
+        scriptVersion = "0.1.0"
 
         phase = cleaning ? .cleaning : (done ? .done : .ready)
         readySince = Date.distantPast
