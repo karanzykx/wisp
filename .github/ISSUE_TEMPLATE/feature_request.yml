@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a new category or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: For a new cleaning category, say which tool or app it is for and where it stores its cache.
+    validations:
+      required: true
+  - type: textarea
+    id: rebuild
+    attributes:
+      label: "For a new category: how is the data rebuilt?"
+      description: Wisp only removes data that comes back automatically. What recreates it, and how long does that take?
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed solution
