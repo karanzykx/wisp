@@ -1,0 +1,79 @@
+name: Release
+
+# Push a tag like v0.1.0 and this builds the DMG from that exact commit and
+# publishes it, with its SHA-256, as a GitHub Release.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag must match the engine version
+        run: |
+          set -euo pipefail
+          version="$(/bin/bash engine/wisp.sh --version | awk '{print $2}')"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match engine version v$version" >&2
+            exit 1
+          fi
+          echo "VERSION=$version" >>"$GITHUB_ENV"
+
+      - name: Tests
+        run: |
+          /bin/bash engine/wisp.sh --self-test
+          /bin/bash tests/e2e.sh
+
+      - name: Build
+        run: scripts/build.sh
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          set -euo pipefail
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/      { exit }
+            found                  { print }
+          ' CHANGELOG.md >notes.md
+          if [ ! -s notes.md ]; then echo "No CHANGELOG entry for $VERSION" >&2; exit 1; fi
+          {
+            echo
+            echo "---"
+            echo "**Install:** download \`Wisp.dmg\` below, or \`brew install --cask karanzykx/tap/wisp\`."
+            echo "SHA-256 is in \`Wisp.dmg.sha256\`."
+          } >>notes.md
+          case "$VERSION" in
+            0.*)
+              {
+                echo
+                echo "> **Preview release.** Wisp 0.x is usable and tested, but its behaviour can still change between"
+                echo "> minor versions. Ideas and feedback are welcome in [Discussions](https://github.com/karanzykx/wisp/discussions)."
+              } >>notes.md ;;
+          esac
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="Wisp $VERSION"
+          case "$VERSION" in 0.*) title="$title (preview)" ;; esac
+          gh release create "$GITHUB_REF_NAME" \
+            dist/Wisp.dmg dist/Wisp.dmg.sha256 \
+            --title "$title" \
+            --notes-file notes.md \
+            --verify-tag
+
+      - name: Attest build provenance
+        continue-on-error: true
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/Wisp.dmg
