@@ -17,7 +17,7 @@ jobs:
     name: Lint
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install ShellCheck
         run: command -v shellcheck >/dev/null || brew install shellcheck
       - name: Syntax check (bash 3.2, the macOS default)
@@ -30,7 +30,7 @@ jobs:
     name: Tests
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Engine self-test
         run: /bin/bash engine/wisp.sh --self-test
       - name: End-to-end tests
@@ -41,7 +41,7 @@ jobs:
     needs: [lint, test]
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build
         run: scripts/build.sh
       - name: Verify the bundle
