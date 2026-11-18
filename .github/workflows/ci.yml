@@ -52,7 +52,7 @@ jobs:
           codesign --verify --deep --strict dist/Wisp.app
           hdiutil verify dist/Wisp.dmg
           (cd dist && shasum -a 256 -c Wisp.dmg.sha256)
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Wisp-dmg
           path: |
